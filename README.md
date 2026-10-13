@@ -18,7 +18,7 @@ ln -s "$(pwd)/kmp-system-design-skill/kmp-system-design" ~/.claude/skills/kmp-sy
 ## Использование
 
 В Claude Code: `/kmp-system-design` или «спроектируй фичу …».
-Команды во время сессии: `дальше`, `критика`, `кратко`, `за N недель`, `что спросить`, `допущения`, `итог`.
+Команды во время сессии: `дальше`, `критика`, `кратко`, `за N недель`, `что спросить`, `допущения`, `итог`, `детали`, `риски`, `ускорь`, `нарисуй`.
 
 ## Структура
 
@@ -28,5 +28,6 @@ kmp-system-design/
   references/architecture.md       — шаблон архитектуры KMP-фичи
   references/quality-and-risks.md  — тесты, запуск, риски
   references/estimation.md         — эвристики оценки, команда, Гант
+  references/typical-features.md   — подводные камни типовых фич (карта, лента, чат, оплата, BLE…)
   references/output-template.md    — шаблон итогового документа
 ```
