@@ -1,0 +1,68 @@
+<style>
+.gw{font-size:13px;color:var(--text-primary)}
+.gr{display:grid;grid-template-columns:230px 1fr;align-items:center;min-height:26px}
+.gl{padding-right:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt{position:relative;height:26px;border-left:0.5px solid var(--border)}
+.gb{position:absolute;top:6px;height:14px;border-radius:4px}
+.gd{position:absolute;top:4px;font-size:11px;color:var(--text-muted);padding-left:6px;white-space:nowrap}
+.gs{font-weight:500;color:var(--text-primary);padding-top:10px}
+.gx{position:absolute;top:0;bottom:0;border-left:0.5px dashed var(--border)}
+.gm{position:absolute;top:7px;width:12px;height:12px;transform:rotate(45deg);margin-left:-6px}
+.gml{position:absolute;top:4px;font-size:12px;color:var(--text-primary);padding-left:12px;white-space:nowrap}
+</style>
+<h2 class="sr-only">ОДНО ПРЕДЛОЖЕНИЕ: что за план, состав, когда в проде.</h2>
+<div class="gw" id="gantt"></div>
+<div id="gleg" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text-secondary)"></div>
+<script>
+// ===== ДАННЫЕ: меняй только этот блок =====
+const start = '2026-10-19'; // понедельник старта
+// Задача: [id, название (≤30 символов), длительность в рабочих днях, [id зависимостей], подпись вехи]
+// Длительность 0 = веха (ромб + дата + подпись). Начало задачи = конец самой поздней зависимости.
+const sections = [
+ ['Подготовка','prep',[
+  ['a1','Discovery, контракт API',3]]],
+ ['Dev 1','dev',[
+  ['b1','Каркас, DI, флаг',2,['a1']],
+  ['b2','Data layer',5,['b1']]]],
+ ['Dev 2','dev',[
+  ['c1','Экран A на моках',4,['a1']]]],
+ ['QA','qa',[
+  ['d1','Тестирование 2 платформ',5,['b2','c1']]]],
+ ['Релиз','rel',[
+  ['e1','Ревью сторов',2,['d1']],
+  ['m1','В проде',0,['e1'],'1% пользователей'],
+  ['e2','Staged rollout 1→100%',10,['e1']]]]
+];
+// ===== конец данных =====
+const C = {
+  prep:{c:'#888780',name:'Подготовка'},
+  dev:{c:'#378ADD',name:'Разработка'},
+  qa:{c:'#639922',name:'QA'},
+  rel:{c:'#BA7517',name:'Релиз'}
+};
+const end = {}; let total = 0;
+sections.forEach(([, , ts]) => ts.forEach(t => {
+  const s = Math.max(0, ...(t[3]||[]).map(id => end[id]));
+  t.s = s; end[t[0]] = s + t[2]; total = Math.max(total, end[t[0]]);
+}));
+const weeks = Math.ceil(total / 5) + 1;
+const span = weeks * 5;
+const pct = d => (d / span * 100) + '%';
+const date = d => { const x = new Date(start); x.setDate(x.getDate() + Math.floor(d/5)*7 + d%5); return x.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}); };
+let h = '<div class="gr"><div></div><div class="gt" style="border:none;height:18px">';
+for (let w = 0; w < weeks; w++) h += `<span style="position:absolute;left:${pct(w*5)};font-size:11px;color:var(--text-muted)">${date(w*5)}</span>`;
+h += '</div></div>';
+const grid = Array.from({length: weeks}, (_, w) => `<div class="gx" style="left:${pct(w*5)}"></div>`).join('');
+sections.forEach(([title, k, ts]) => {
+  h += `<div class="gs">${title}</div>`;
+  ts.forEach(t => {
+    const c = C[k].c;
+    const bar = t[2] === 0
+      ? `<div class="gm" style="left:${pct(t.s)};background:${c}"></div><span class="gml" style="left:${pct(t.s)}">${date(t.s)} · ${t[4]||''}</span>`
+      : `<div class="gb" style="left:${pct(t.s)};width:${pct(t[2])};background:${c}"></div><span class="gd" style="left:${pct(t.s + t[2])}">${t[2]} дн</span>`;
+    h += `<div class="gr"><div class="gl" title="${t[1]}">${t[1]}</div><div class="gt">${grid}${bar}</div></div>`;
+  });
+});
+document.getElementById('gantt').innerHTML = h;
+document.getElementById('gleg').innerHTML = Object.values(C).map(c => `<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:${c.c}"></span>${c.name}</span>`).join('') + `<span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;transform:rotate(45deg);background:var(--text-secondary)"></span>Веха</span><span>Старт ${new Date(start).toLocaleDateString('ru-RU')} · рабочие дни · ${total} дн до 100%</span>`;
+</script>

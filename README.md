@@ -29,6 +29,7 @@ kmp-system-design/
   references/quality-and-risks.md  — тесты, запуск, риски
   references/estimation.md         — эвристики оценки, команда, Гант
   references/typical-features.md   — подводные камни типовых фич (карта, лента, чат, оплата, BLE…)
-  references/diagrams.md           — как отрисовывать диаграммы в чате (widget + mermaid.js)
+  references/diagrams.md           — как отрисовывать диаграммы в чате
+  references/gantt-widget.html     — шаблон Ганта для виджета (меняются только данные)
   references/output-template.md    — шаблон итогового документа
 ```

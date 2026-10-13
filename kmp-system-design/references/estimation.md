@@ -84,7 +84,8 @@ gantt
   Регресс + фиксы                     :d3, after d2, 3d
 
   section Релиз
-  Релизный поезд + ревью стора        :milestone, e1, after d3, 0d
-  Staged rollout + A/B                :e2, after d3, 10d
+  Ревью сторов                        :e1, after d3, 2d
+  В проде (1%)                        :milestone, m1, after e1, 0d
+  Staged rollout + A/B                :e2, after e1, 10d
 ```
 Отметь **критический путь** словами (обычно: контракт API → data layer → интеграция → QA).

@@ -1,41 +1,29 @@
 # Как показывать диаграммы
 
-Блок ```mermaid в чате Claude Desktop / claude.ai не рендерится. Порядок выбора:
+Блок ```mermaid в чате Claude Desktop / claude.ai не рендерится, а mermaid.js внутри виджета даёт нечитаемый Гант в тёмной теме (белые полосы, светлый текст на белом). Поэтому:
 
-## 1. Виджет в чате (`show_widget`, Claude Desktop / claude.ai) — проверено, работает
+| Что | Чат с виджетом (`show_widget`) | Итоговый `.md` |
+|---|---|---|
+| Гант | шаблон `references/gantt-widget.html` | mermaid `gantt` |
+| Архитектура | SVG по правилам виджета (`c-*` классы) | mermaid `flowchart` |
 
-Один раз за сессию вызови `read_me` визуализации (module `diagram`), затем `show_widget` с HTML ниже. Подставь mermaid-исходник в `src`. Подходит и для `gantt`, и для `flowchart`. Init-блок не меняй (по нему mermaid меряет текст, иначе обрезает подписи).
+Перед первым `show_widget` за сессию вызови `read_me` визуализации (module `diagram`).
 
-```html
-<h2 class="sr-only">Одно предложение: что на диаграмме.</h2>
-<div id="d"></div>
-<script type="module">
-import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
-const themeMode = document.documentElement.dataset.mode;
-const dark = themeMode ? themeMode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-await document.fonts.ready;
-mermaid.initialize({startOnLoad:false, theme:'base', fontFamily:'"anthropic-sans", sans-serif',
-  themeVariables:{darkMode:dark, fontSize:'13px', fontFamily:'"anthropic-sans", sans-serif',
-  lineColor: dark?'#9c9a92':'#73726c', textColor: dark?'#c2c0b6':'#3d3d3a'}});
-const src = `gantt
-  dateFormat YYYY-MM-DD
-  ...`;
-const { svg } = await mermaid.render('d-svg', src);
-document.getElementById('d').innerHTML = svg;
-</script>
-```
+## Гант — `gantt-widget.html`
+- Скопируй файл целиком в `widget_code`, меняй **только блок ДАННЫЕ** и строку `sr-only`. Даты, раскладка, сетка недель, легенда считаются сами.
+- Цвета — сплошные средние тона (проверено в тёмной теме). Не заменяй их на `var(--bg-*)` — в тёмной теме сливаются с фоном.
+- Секции: `prep` / `dev` / `qa` / `rel`. Одна секция = один человек/поток, чтобы была видна загрузка.
+- Логика плана: ревью сторов — задача 1–3 дня **перед** раскаткой, а не веха параллельно с ней. Веха (длительность 0) — только для событий («В проде, 1%», «Код-фриз»), всегда с подписью.
+- Названия ≤ 30 символов.
+- Старт — ближайший понедельник от сегодняшней даты (или дата продакта), назови его одной строкой.
 
-Правила:
-- В mermaid-исходнике внутри шаблонной строки не используй обратные кавычки и `${`.
-- Подписи задач в Ганте — до ~30 символов, иначе налезают.
-- Архитектурная схема: ≤ 10–12 узлов. Больше — разбей на обзор + деталь.
-- Текст пояснений — в ответе, не внутри виджета.
+## Архитектура — SVG
+- ≤ 8–10 узлов; больше — разбей на обзор (модули) + деталь (слои внутри фичи).
+- Цвета по смыслу: UI/presentation — один ramp, data — второй, платформенное/внешнее — серый. Интерфейсы помечай подписью «interface».
+- Пояснения — в тексте ответа, не внутри виджета.
 
-## 2. Artifact
-Если виджета нет (например, Claude Code в терминале) — один Artifact «System Design: <фича>» с mermaid.js; обновляй тот же артефакт, давай ссылку.
+## Если виджета нет
+1. Artifact «System Design: <фича>» (Claude Code в терминале): тот же шаблон Ганта и SVG внутри страницы; обновляй один артефакт, давай ссылку.
+2. Совсем ничего — mermaid-текстом + «откроется в GitHub / Android Studio / Obsidian».
 
-## 3. Текст
-Только если нет ни того, ни другого: mermaid-текстом + «откроется в GitHub / Android Studio / Obsidian».
-
-## Даты в Ганте
-Старт — ближайший понедельник от сегодняшней даты (или дата, названная продактом). Скажи об этом одной строкой. `excludes weekends` — всегда.
+**Никогда не утверждай, что диаграмма читаемо отрисована, по одному факту отсутствия ошибки** — попроси пользователя глянуть один раз в начале сессии.
