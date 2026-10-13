@@ -30,6 +30,7 @@ kmp-system-design/
   references/estimation.md         — эвристики оценки, команда, Гант
   references/typical-features.md   — подводные камни типовых фич (карта, лента, чат, оплата, BLE…)
   references/diagrams.md           — как отрисовывать диаграммы в чате
-  references/gantt-widget.html     — шаблон Ганта для виджета (меняются только данные)
+  references/gantt-widget.html     — шаблон Ганта для виджета и артефакта (меняются только данные)
+  references/architecture-svg-example.svg — образец схемы архитектуры для виджета
   references/output-template.md    — шаблон итогового документа
 ```
