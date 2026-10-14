@@ -3,73 +3,99 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gwrap{--g-text:var(--text-primary,#e8e6df);--g-text2:var(--text-secondary,#b4b2a9);--g-border:var(--border,rgba(255,255,255,.15))}}
 :root[data-theme="dark"] .gwrap{--g-text:var(--text-primary,#e8e6df);--g-text2:var(--text-secondary,#b4b2a9);--g-border:var(--border,rgba(255,255,255,.15))}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-.gw{font-size:13px;color:var(--g-text)}
+.gwrap{font-size:13px;color:var(--g-text)}
 .gr{display:grid;grid-template-columns:230px 1fr;align-items:center;min-height:26px}
 .gl{padding-right:10px;color:var(--g-text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gt{position:relative;height:26px;border-left:0.5px solid var(--g-border)}
 .gb{position:absolute;top:6px;height:14px;border-radius:4px}
 .gd{position:absolute;top:4px;font-size:11px;color:var(--g-muted);padding-left:6px;white-space:nowrap}
-.gs{font-weight:500;color:var(--g-text);padding-top:10px}
+.gs{font-weight:500;padding-top:10px}
 .gx{position:absolute;top:0;bottom:0;border-left:0.5px dashed var(--g-border)}
 .gm{position:absolute;top:7px;width:12px;height:12px;transform:rotate(45deg);margin-left:-6px}
-@media (max-width:560px){.gr{grid-template-columns:120px 1fr}.gw{font-size:12px}}
-.gml{position:absolute;top:4px;font-size:12px;color:var(--g-text);padding-left:12px;white-space:nowrap}
+.gml{position:absolute;top:4px;font-size:12px;white-space:nowrap}
+.gh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-top:22px;padding-top:12px;border-top:0.5px solid var(--g-border)}
+.gh b{font-size:15px;font-weight:500}
+.gh span{color:var(--g-text2)}
+.gsum .gl b{font-weight:500;color:var(--g-text)}
+.gsum .gr{grid-template-columns:230px 1fr 140px}
+.gsv{padding-left:10px;white-space:nowrap}
+@media (max-width:560px){.gr{grid-template-columns:120px 1fr}.gsum .gr{grid-template-columns:120px 1fr}.gsv{grid-column:2;padding:0 0 4px;font-size:11px;color:var(--g-muted)}.gwrap{font-size:12px}}
 </style>
-<h2 class="sr-only">ОДНО ПРЕДЛОЖЕНИЕ: что за план, состав, когда в проде.</h2>
+<h2 class="sr-only">ОДНО ПРЕДЛОЖЕНИЕ: сценарии состава команды и когда каждый попадает в прод.</h2>
 <div class="gwrap">
-<div class="gw" id="gantt"></div>
-<div id="gleg" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--g-text2)"></div>
+<div id="gsum" class="gsum"></div>
+<div id="gantts"></div>
+<div id="gwarn" style="margin-top:10px;font-size:12px;color:var(--text-danger,#A32D2D)"></div>
+<div id="gleg" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--g-text2)"></div>
 </div>
 <script>
 // ===== ДАННЫЕ: меняй только этот блок =====
-const start = '2026-10-19'; // понедельник старта
-// Задача: [id, название (≤30 символов), длительность в рабочих днях, [id зависимостей], подпись вехи]
-// Длительность 0 = веха (ромб + дата + подпись). Начало задачи = конец самой поздней зависимости.
-const sections = [
- ['Подготовка','prep',[
-  ['a1','Discovery, контракт API',3]]],
- ['Dev 1','dev',[
-  ['b1','Каркас, DI, флаг',2,['a1']],
-  ['b2','Data layer',5,['b1']]]],
- ['Dev 2','dev',[
-  ['c1','Экран A на моках',4,['a1']]]],
- ['QA','qa',[
-  ['d1','Тестирование 2 платформ',5,['b2','c1']]]],
- ['Релиз','rel',[
-  ['e1','Ревью сторов',2,['d1']],
-  ['m1','В проде',0,['e1'],'1% пользователей'],
-  ['e2','Staged rollout 1→100%',10,['e1']]]]
+const start = '2026-10-19'; // понедельник старта, общий для всех сценариев
+// Сценарий: {name, team, sections}. Секция = один человек/поток: [заголовок, тип prep|dev|qa|rel, задачи].
+// Задача: [id, название (≤30 символов), рабочих дней, [id зависимостей], подпись вехи]. 0 дней = веха.
+// В секции 'rel' первая веха считается датой «в проде». id уникальны внутри сценария.
+const scenarios = [
+ {name:'Минимум', team:'1 dev · 0.5 QA', sections:[
+  ['Dev','dev',[['a','Каркас и data layer',5],['b','Экран A',4,['a']]]],
+  ['QA','qa',[['q','Тестирование',5,['b']]]],
+  ['Релиз','rel',[['r','Ревью сторов',2,['q']],['p','В проде',0,['r'],'1%'],['s','Rollout 1→100%',10,['r']]]]]},
+ {name:'Максимум', team:'2 dev · 1 QA', sections:[
+  ['Dev 1','dev',[['a','Каркас и data layer',5]]],
+  ['Dev 2','dev',[['b','Экран A на моках',4]]],
+  ['QA','qa',[['q','Тестирование',5,['a','b']]]],
+  ['Релиз','rel',[['r','Ревью сторов',2,['q']],['p','В проде',0,['r'],'1%'],['s','Rollout 1→100%',10,['r']]]]]}
 ];
 // ===== конец данных =====
-const C = {
-  prep:{c:'#888780',name:'Подготовка'},
-  dev:{c:'#378ADD',name:'Разработка'},
-  qa:{c:'#639922',name:'QA'},
-  rel:{c:'#BA7517',name:'Релиз'}
-};
-const end = {}; let total = 0;
-sections.forEach(([, , ts]) => ts.forEach(t => {
-  const s = Math.max(0, ...(t[3]||[]).map(id => end[id]));
-  t.s = s; end[t[0]] = s + t[2]; total = Math.max(total, end[t[0]]);
+const C = {prep:{c:'#888780',name:'Подготовка'},dev:{c:'#378ADD',name:'Разработка'},qa:{c:'#639922',name:'QA'},rel:{c:'#BA7517',name:'Релиз'}};
+scenarios.forEach(sc => {
+  sc.sections = sc.sections.map(([a, k, ts]) => [a, k, ts.map(t => [...t])]);
+  const end = {}; sc.total = 0; sc.prod = null;
+  sc.sections.forEach(([, k, ts]) => ts.forEach(t => {
+    const s = Math.max(0, ...(t[3]||[]).map(id => end[id] ?? 0));
+    t.s = s; end[t[0]] = s + t[2]; sc.total = Math.max(sc.total, end[t[0]]);
+    if (k === 'rel' && t[2] === 0 && sc.prod === null) sc.prod = s;
+  }));
+  if (sc.prod === null) sc.prod = sc.total;
+});
+const warn = [];
+scenarios.forEach(sc => sc.sections.forEach(([title, k, ts]) => {
+  if (k === 'rel') return;
+  const bars = ts.filter(t => t[2] > 0).sort((a, b) => a.s - b.s);
+  for (let i = 1; i < bars.length; i++) if (bars[i].s < bars[i-1].s + bars[i-1][2])
+    warn.push(`${sc.name} · ${title}: «${bars[i-1][1]}» и «${bars[i][1]}» пересекаются — один человек не делает две задачи сразу`);
 }));
-const weeks = Math.ceil(total / 5) + 1;
-const span = weeks * 5;
+const maxTotal = Math.max(...scenarios.map(s => s.total));
+const weeks = Math.ceil(maxTotal / 5) + 1, span = weeks * 5;
 const pct = d => (d / span * 100) + '%';
 const date = d => { const x = new Date(start); x.setDate(x.getDate() + Math.floor(d/5)*7 + d%5); return x.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}); };
-let h = '<div class="gr"><div></div><div class="gt" style="border:none;height:18px">';
-for (let w = 0; w < weeks; w++) h += `<span style="position:absolute;left:${pct(w*5)};font-size:11px;color:var(--g-muted)">${date(w*5)}</span>`;
-h += '</div></div>';
+const wk = d => (d / 5).toFixed(1).replace('.0','').replace('.', ',');
 const grid = Array.from({length: weeks}, (_, w) => `<div class="gx" style="left:${pct(w*5)}"></div>`).join('');
-sections.forEach(([title, k, ts]) => {
-  h += `<div class="gs">${title}</div>`;
-  ts.forEach(t => {
-    const c = C[k].c;
-    const bar = t[2] === 0
-      ? `<div class="gm" style="left:${pct(t.s)};background:${c}"></div><span class="gml" style="${t.s/span > 0.45 ? `right:${100 - t.s/span*100}%;padding:0 12px 0 0` : `left:${pct(t.s)}`}">${date(t.s)} · ${t[4]||''}</span>`
-      : `<div class="gb" style="left:${pct(t.s)};width:${pct(t[2])};background:${c}"></div><span class="gd" style="left:${pct(t.s + t[2])}">${t[2]} дн</span>`;
-    h += `<div class="gr"><div class="gl" title="${t[1]}">${t[1]}</div><div class="gt">${grid}${bar}</div></div>`;
+const axis = () => { let h = '<div class="gr"><div></div><div class="gt" style="border:none;height:18px">'; const step = innerWidth < 560 && weeks > 5 ? 2 : 1; for (let w = 0; w < weeks; w += step) if (w*5/span < 0.86) h += `<span style="position:absolute;left:${pct(w*5)};font-size:11px;color:var(--g-muted)">${date(w*5)}</span>`; return h + '</div></div>'; };
+const label = (pos, text) => pos/span > 0.45 ? `<span class="gml" style="right:${100 - pos/span*100}%;padding-right:12px">${text}</span>` : `<span class="gml" style="left:${pct(pos)};padding-left:12px">${text}</span>`;
+let sum = '<div class="gs" style="padding-top:0">Сравнение сценариев · до прода</div>' + axis().replace('</div></div>', '</div><div></div></div>');
+scenarios.forEach(sc => {
+  sum += `<div class="gr"><div class="gl"><b>${sc.name}</b> · ${sc.team}</div><div class="gt">${grid}
+    <div class="gb" style="left:0;width:${pct(sc.prod)};background:${C.dev.c}"></div>
+    <div class="gb" style="left:${pct(sc.prod)};width:${pct(sc.total - sc.prod)};background:${C.rel.c};opacity:.55"></div>
+    <div class="gm" style="left:${pct(sc.prod)};background:${C.rel.c}"></div></div>
+    <div class="gsv">${date(sc.prod)} · ${wk(sc.prod)} нед</div></div>`;
+});
+document.getElementById('gsum').innerHTML = sum;
+let h = '';
+scenarios.forEach(sc => {
+  h += `<div class="gh"><b>${sc.name}</b><span>${sc.team} · в проде ${date(sc.prod)} · 100% ${date(sc.total)}</span></div>` + axis();
+  sc.sections.forEach(([title, k, ts]) => {
+    h += `<div class="gs">${title}</div>`;
+    ts.forEach(t => {
+      const c = C[k].c;
+      const bar = t[2] === 0
+        ? `<div class="gm" style="left:${pct(t.s)};background:${c}"></div>${label(t.s, `${date(t.s)} · ${t[4]||''}`)}`
+        : `<div class="gb" style="left:${pct(t.s)};width:${pct(t[2])};background:${c}"></div><span class="gd" style="left:${pct(t.s + t[2])}">${t[2]} дн</span>`;
+      h += `<div class="gr"><div class="gl" title="${t[1]}">${t[1]}</div><div class="gt">${grid}${bar}</div></div>`;
+    });
   });
 });
-document.getElementById('gantt').innerHTML = h;
-document.getElementById('gleg').innerHTML = Object.values(C).map(c => `<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:${c.c}"></span>${c.name}</span>`).join('') + `<span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;transform:rotate(45deg);background:var(--g-text2)"></span>Веха</span><span>Старт ${new Date(start).toLocaleDateString('ru-RU')} · рабочие дни · ${total} дн до 100%</span>`;
+document.getElementById('gantts').innerHTML = h;
+document.getElementById('gwarn').innerHTML = warn.map(w => `⚠ ${w}`).join('<br>');
+document.getElementById('gleg').innerHTML = Object.values(C).map(c => `<span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:${c.c}"></span>${c.name}</span>`).join('') + `<span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;transform:rotate(45deg);background:var(--g-text2)"></span>Веха</span><span>Старт ${new Date(start).toLocaleDateString('ru-RU')} · рабочие дни · общая шкала для всех сценариев</span>`;
 </script>
